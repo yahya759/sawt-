@@ -7,16 +7,10 @@ interface ComplaintFormProps {
   onOpenTrackModal: (trackingId?: string) => void;
 }
 
-// Simple AI-style rule classifier for automatic classification on submission
-function detectCategoryFromText(text: string): CategoryType {
-  const t = text.toLowerCase();
-  if (/(كهرب|إنارة|انقطاع|نور|عمود|أعمدة)/.test(t)) return 'lighting';
-  if (/(مياه|تسرب|أنبوب|مجاري|طفح|ماء)/.test(t)) return 'water';
-  if (/(سفلت|طريق|حفر|مطب|رصف|شوارع)/.test(t)) return 'paving';
-  if (/(نظافة|حاوية|قمامة|نفايات|زبالة)/.test(t)) return 'cleanliness';
-  if (/(حديق|أطفال|أرجوح|أشجار|مرفق|ملاعب)/.test(t)) return 'parks';
-  return 'other';
-}
+// رابط n8n webhook - التصنيف الفعلي بيصير AI Agent (Groq) على السيرفر، مش هون
+const N8N_WEBHOOK_URL =
+  import.meta.env.VITE_N8N_WEBHOOK_URL ||
+  'https://xfrrfrw223aa.app.n8n.cloud/webhook/sawt-complaint';
 
 export const ComplaintForm: React.FC<ComplaintFormProps> = ({
   onSubmitComplaint,
@@ -32,24 +26,47 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
   const [copiedId, setCopiedId] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!complaintText.trim()) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const autoCategory = detectCategoryFromText(complaintText);
+    setSubmitError(null);
+
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          complaint: complaintText.trim(),
+          neighborhood: neighborhood || 'غير محدد',
+          name: name.trim() || undefined,
+          contact: contact.trim() || undefined,
+        }),
+      });
+
+      if (!response.ok) throw new Error(`Webhook responded with ${response.status}`);
+
+      const result = await response.json();
+
+      // نحدث الحالة المحلية للـ UI، ونستخدم رقم المتابعة الحقيقي القادم من Supabase
       const created = onSubmitComplaint({
         complaint: complaintText.trim(),
         neighborhood: neighborhood || 'غير محدد',
-        category: autoCategory,
+        category: 'other', // التصنيف الفعلي محفوظ بـ Supabase عبر AI Agent، مش مستخدم بالواجهة هون
         name: name.trim() || undefined,
         contact: contact.trim() || undefined,
       });
 
-      setSubmittedItem(created);
+      setSubmittedItem({ ...created, id: result.tracking_id || created.id });
+    } catch (err) {
+      console.error('فشل إرسال الشكوى:', err);
+      setSubmitError('تعذر إرسال طلبك، حاول مرة أخرى بعد قليل.');
+    } finally {
       setIsSubmitting(false);
-    }, 400);
+    }
   };
 
   const handleReset = () => {
@@ -171,6 +188,11 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({
                 }`}
               />
             </div>
+
+            {/* Error Message */}
+            {submitError && (
+              <p className="text-sm text-[#ba1a1a] text-right -mt-2">{submitError}</p>
+            )}
 
             {/* Submit Button */}
             <button
