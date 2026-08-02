@@ -1,0 +1,6 @@
+{
+  "name": "صوت المجتمع - منصة البلاغات والمقترحات",
+  "description": "منصة مجتمعية تفاعلية لتقديم ومتابعة الشكاوى والطلبات في الأحياء",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

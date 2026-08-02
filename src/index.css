@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-cairo: 'Cairo', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-cairo);
+    background-color: #f9f9f7;
+    color: #1a1c1b;
+  }
+}
+
+/* Custom Utilities for smooth inputs and custom colors */
+.bg-surface {
+  background-color: #f9f9f7;
+}
+
+.bg-surface-container-lowest {
+  background-color: #ffffff;
+}
+
+.bg-surface-container-low {
+  background-color: #f4f4f2;
+}
+
+.bg-surface-container {
+  background-color: #eeeeec;
+}
+
+.text-primary {
+  color: #00685f;
+}
+
+.bg-primary {
+  background-color: #00685f;
+}
+
+.border-outline {
+  border-color: #6d7a77;
+}
+
+.border-outline-variant {
+  border-color: #bcc9c6;
+}
+
+/* Focus styles matching exact design spec */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #00685f !important;
+  box-shadow: 0 0 0 2px rgba(0, 104, 95, 0.15);
+}
+
